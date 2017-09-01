@@ -1,0 +1,4 @@
+{
+  "text": "test string with ++PLACEHOLDER++",
+  "script":"return input + 'I added this bit'"
+}
