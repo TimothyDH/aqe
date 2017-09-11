@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+   <!-- Custom styles for this template -->
+    <link href="starter-template.css" rel="stylesheet">
+    <title>Clara Tests</title>
+</head>
+<body>
+<div id='root'></div>
+
+<script src="https://fb.me/react-15.0.1.js"></script>
+<script src="https://fb.me/react-dom-15.0.1.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script type="text/babel">
+
+
+var QuestionAnswer = React.createClass({
+  render: function() {
+    return (
+        <div>
+        <label for="user_answer">Enter your answer here:</label>
+        <input type="text" name="user_answer" />
+        <br></br>
+        <input type="submit" value="Submit Answer" />
+        </div>
+    );
+  }
+});
+
+var QuestionText = React.createClass({
+    render: function() {
+        return (<div>{this.props.question.question_text}</div>);
+     }
+});
+
+var SimpleMathQuestion = React.createClass({
+  render: function() {
+    return (
+        <div>
+        <div><b>{this.props.question.question_text}</b></div>
+        <label for="user_answer">Enter your answer here:</label>
+        <input type="text" name="user_answer" onChange={(e) => this.props.handleChange(e)} />
+        <br></br>
+        </div>
+    );
+  }
+});
+
+var SubmitNextButton = React.createClass({
+    render: function() {
+           return(
+              <button onClick={() => this.props.onClick()} >{this.props.submitornext}</button>
+            );
+     }
+});
+
+var Test = React.createClass({
+
+  loadQuestionsFromServer: function () {
+    var self = this;
+    $.ajax({
+      url: "http://localhost:8080/api/2010",
+      type: 'get',
+      dataType: 'json'
+    }).then(function (data) {
+      console.log(data);
+      self.setState({
+        questions: data,
+        currentQuestion: 0,
+        score: 0,
+        submitornext: 'Submit Answer',
+        });
+    });
+  },
+
+  getInitialState: function () {
+    return {
+     questions:[{question_text:'loading...'}],
+     submitornext: 'Submit Answer',
+     currentQuestion: 0,
+     score: 0,
+    };
+  },
+
+  componentDidMount: function () {
+    this.loadQuestionsFromServer();
+  },
+
+  handleClick() {
+   if(this.state.submitornext=='NEXT QUESTION'){
+         var currentQ = this.state.currentQuestion;
+         currentQ = currentQ + 1;
+         this.setState({currentQuestion: currentQ,
+                        submitornext: 'Submit Answer'});
+   }
+   else {
+        if(this.checkanswer()){
+            this.setState({submitornext: 'NEXT QUESTION'});
+        }
+        else {
+            alert("Sorry that's wrong! Try again");
+        }
+    }
+  },
+
+   checkanswer: function () {
+       const correctAnswer = this.state.questions[this.state.currentQuestion].question_answer;
+       console.log("CORRECT ANSWER:" + correctAnswer);
+       console.log("USER ANSWER:" + this.state.user_answer);
+
+       if(this.state.user_answer==correctAnswer){
+              alert("RIGHT");
+              return true;
+       }
+       else {
+              return false;
+       }
+   },
+
+  handleChange(event) {
+    console.log("CHANGED" + event);
+    this.setState({user_answer: event.target.value});
+  },
+
+  render() {
+    console.log("+++QUESTIONS+++");
+    var questionList = this.state.questions;
+    console.log("num QUESTIONS:" + questionList.length);
+    questionList.forEach(
+            function(item, index, array) {
+                console.log(item, index);
+       }
+    );
+    console.log(this.state.questions);
+    const aquestion = questionList[this.state.currentQuestion];
+    return (
+        <div>
+             <SimpleMathQuestion question={aquestion} handleChange={(e) => this.handleChange(e)} />
+             <SubmitNextButton onClick={() => this.handleClick()} submitornext={this.state.submitornext} />
+        </div>
+    );
+  }
+});
+
+var renderWhat = React.createClass({
+
+render: function() {
+ console.log("rendering renderWhat");
+    const isTakingATest = props.takingATest;
+    if (isTakingATest) {
+       return(
+        <div>
+            <Test />
+        </div>
+        );
+    }
+    else{
+        return(
+        <div>
+         <label for="user_name">Enter your name here:</label>
+          <input type="text" name="user_name" />
+          <br></br>
+           <input type="submit" value="TAKE A TEST" />
+        </div>
+        );
+    }
+   }
+ });
+
+var App = React.createClass({
+
+  getInitialState: function () {
+    return {takingATest :false};
+  },
+
+  handleClick: function (){
+    this.setState({
+      takingATest: !this.state.takingATest,
+    });
+  },
+
+  render: function() {
+    console.log("rendering.....");
+    console.log("takingATest?");
+    console.log(this.state.takingATest);
+    if(!this.state.takingATest){
+        return (
+            <div>
+             <label for="user_name">Enter your name here:</label>
+              <input type="text" name="user_name" />
+              <br></br>
+               <button onClick={() => this.handleClick()}>
+                    TAKE A TEST
+                </button>
+            </div>
+        );
+    }
+    else{
+        return (
+            <div>
+                <Test />
+            </div>
+        );
+    }
+  }
+});
+
+ReactDOM.render(
+  <App />,
+   document.getElementById('root')
+);
+
+</script>
+</body>
+</html>

@@ -2,85 +2,328 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+    <!-- Custom styles for this template -->
+    <link href="starter-template.css" rel="stylesheet">
     <title>Clara Tests</title>
 </head>
 <body>
-<div id='root'></div>
+<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+    <a class="navbar-brand" href="#">Clara Practice Tests</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+        <!--ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+            </li>
+        </ul-->
+    </div>
+</nav>
+
+<div class="container">
+
+    <div class="starter-template">
+        <div id='root'></div>
+    </div>
+
+</div><!-- /.container -->
+
 
 <script src="https://fb.me/react-15.0.1.js"></script>
 <script src="https://fb.me/react-dom-15.0.1.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script type="text/babel">
-
-
-var QuestionText = React.createClass({
-  getDefaultProps: function() {
-    return {
-      question_text: "loading..."
-    };
-  },
-  render: function() {
-    return (<div>{this.props.question.question_text}</div>);
-  }
-});
-
 var QuestionAnswer = React.createClass({
   render: function() {
-    return (<div><input type="text" name="user_answer" /></div>);
+    return (
+        <div>
+        <label for="user_answer">Enter your answer here:</label>
+        <input type="text" name="user_answer" />
+        <br></br>
+        <input type="submit" value="Submit Answer" />
+        </div>
+    );
   }
 });
 
-var SubmitButton = React.createClass({
+var QuestionText = React.createClass({
     render: function() {
-        return (<input type="submit" value="Submit Answer" />);
-    }
+        return (<div>{this.props.question.question_text}</div>);
+     }
 });
 
-var MathQuestionSimple = React.createClass({
-render: function() {
-        return (<QuestionText question={QUESTION}/>);
-    }
+var SimpleMathQuestion = React.createClass({
+  render: function() {
+    return (
+        <div>
+        <div><b>{this.props.question.question_text}</b></div>
+        <label for="user_answer">Enter your answer here:</label>
+        <input type="text" name="user_answer" onChange={(e) => this.props.handleChange(e)} />
+        <br></br>
+        </div>
+    );
+  }
 });
 
-var QUESTION = {"question_text":"Two small towns, called Moira and Dollingstown are connected by a long, straight road. You are walking along that road and see a signpost that says Moira is 86.4 away and Dollingstown Dollingstown is 43.7 away. What is the distance between the two towns?","question_answer":130.1,"answer_type":"NUMBER"}
+var MultiPartMathQuestion = React.createClass({
+  render: function() {
+    return (
+        <div>
+        <div><b>{this.props.question.question_text}</b></div>
+        <label for="user_answer_part1">Enter your answer here. HOURS:</label>
+        <input type="text" name="user_answer_part1" onChange={(e) => this.props.handleMultiPartChange1(e)} />
+        <label for="user_answer_part2">MINUTES:</label>
+        <input type="text" name="user_answer_part2" onChange={(e) => this.props.handleMultiPartChange2(e)} />
+        <br></br>
+        </div>
+    );
+  }
+});
 
-var App = React.createClass({
+var SubmitNextButton = React.createClass({
+    render: function() {
+           return(
+              <button onClick={() => this.props.onClick()} >{this.props.submitornext}</button>
+            );
+     }
+});
 
+var Test = React.createClass({
 
   loadQuestionsFromServer: function () {
     var self = this;
     $.ajax({
-      url: "http://localhost:8080/api/2010",
+      url: "api/2010",
       type: 'get',
       dataType: 'json'
     }).then(function (data) {
       console.log(data);
-      self.setState({questions: data});
+      self.setState({
+        questions: data,
+        currentQuestion: 0,
+        score: 0,
+        submitornext: 'Submit Answer',
+        });
     });
   },
 
   getInitialState: function () {
-    return {questions: []};
+    return {
+     questions:[{question_text:'loading...'}],
+     submitornext: 'Submit Answer',
+     currentQuestion: 0,
+     score: 0,
+    };
   },
 
   componentDidMount: function () {
     this.loadQuestionsFromServer();
   },
 
+  handleClick() {
+   if(this.state.submitornext=='NEXT QUESTION'){
+         var currentQ = this.state.currentQuestion;
+         currentQ = currentQ + 1;
+         this.setState({currentQuestion: currentQ,
+                        submitornext: 'Submit Answer'});
+   }
+   else if (this.state.submitornext=='Submit Answer') {
+       // if(this.checkanswer()){
+       //     this.setState({submitornext: 'NEXT QUESTION'});
+       // }
+       if(!this.checkanswer()){
+            alert("Sorry that's wrong! The correct answer was " + this.state.questions[this.state.currentQuestion].question_answer);
+        }
+        this.setState({submitornext: 'NEXT QUESTION'});
+    }
+    else{
+        //TRY ANOTHER
+        window.location.reload();
+    }
+  },
+
+   checkanswer: function () {
+       const type_of_question = this.state.questions[this.state.currentQuestion].question_type;
+       const correctAnswer = this.state.questions[this.state.currentQuestion].question_answer;
+       console.log("CORRECT ANSWER:" + correctAnswer);
+       console.log("USER ANSWER:" + this.state.user_answer);
+       var gotItRight = false;
+       if(type_of_question=="SIMPLE_MATH"){
+         if(this.state.user_answer==correctAnswer){
+            gotItRight=true;
+         }
+       }
+       else{
+        //Multipart number
+        var hours = this.state.user_answer.hours;
+        var minutes = this.state.user_answer.minutes;
+        if((hours==correctAnswer.hours)&&(minutes==correctAnswer.minutes)){
+            gotItRight=true;
+         }
+
+       }
+       if(gotItRight){
+              alert("RIGHT!!!");
+              var newscore = this.state.score + 1;
+              this.setState({score: newscore});
+              return true;
+       }
+       else {
+              return false;
+       }
+   },
+
+  handleChange(event) {
+    console.log("CHANGED" + event);
+    this.setState({user_answer: event.target.value});
+  },
+
+  handleMultiPartChange1(event) {
+    console.log("MULTI PART CHANGED 1" + event.target.value);
+    var currentAnswer = this.state.user_answer;
+    var hours = {hours: event.target.value}
+    var new_answer = {...currentAnswer, ...hours}
+    this.setState({user_answer: new_answer});
+    console.log(JSON.stringify(new_answer));
+  },
+
+ handleMultiPartChange2(event) {
+    console.log("MULTI PART CHANGED 2" + event.target.value);
+    var currentAnswer = this.state.user_answer;
+    var mins = {minutes: event.target.value}
+    var new_answer = {...currentAnswer, ...mins}
+    this.setState({user_answer: new_answer});
+  },
+
   render() {
     console.log("+++QUESTIONS+++");
     var questionList = this.state.questions;
     console.log("num QUESTIONS:" + questionList.length);
-    questionList.forEach(
-            function(item, index, array) {
-                console.log(item, index);
-       }
-    );
+    //questionList.forEach(
+    //        function(item, index, array) {
+    //            console.log(item, index);
+    //   }
+    //);
     console.log(this.state.questions);
-    aquestion = questions[0];
-    return ( <QuestionText question={aquestion}/>
-    );
+    var submitnextortryagain = this.state.submitornext;
+
+    if(this.state.currentQuestion==questionList.length){
+        submitnextortryagain = "TRY ANOTHER";
+        return (
+            <div>
+                 <h1>You finished the test {this.props.user_name}! You scored {this.state.score}</h1>
+                 <SubmitNextButton onClick={() => this.handleClick()} submitornext={submitnextortryagain} />
+            </div>
+        );
+    }
+    else {
+        const aquestion = questionList[this.state.currentQuestion];
+        if(aquestion.question_type=="SIMPLE_MATH"){
+            return (
+                <div>
+                     <SimpleMathQuestion question={aquestion} handleChange={(e) => this.handleChange(e)} />
+                     <SubmitNextButton onClick={() => this.handleClick()} submitornext={submitnextortryagain} />
+                </div>
+            );
+        }
+        else if (aquestion.question_type=="MULTI_PART_ANSWER_MATH"){
+            return (
+                <div>
+                     <MultiPartMathQuestion question={aquestion} handleMultiPartChange1={(e) => this.handleMultiPartChange1(e)} handleMultiPartChange2={(e) => this.handleMultiPartChange2(e)} />
+                     <SubmitNextButton onClick={() => this.handleClick()} submitornext={submitnextortryagain} />
+                </div>
+            );
+        }
+        else{
+            return (
+                <div>
+                    loading....
+                </div>
+            );
+        }
+    }
+  }
+});
+
+var renderWhat = React.createClass({
+
+render: function() {
+ console.log("rendering renderWhat");
+    const isTakingATest = props.takingATest;
+    if (isTakingATest) {
+       return(
+        <div>
+            <Test />
+        </div>
+        );
+    }
+    else{
+        return(
+        <div>
+         <label for="user_name">Enter your name here:</label>
+          <input type="text" name="user_name" />
+          <br></br>
+           <input type="submit" value="TAKE A TEST" />
+        </div>
+        );
+    }
+   }
+ });
+
+var App = React.createClass({
+
+  getInitialState: function () {
+    return {takingATest :"start"};
+  },
+
+  handleClick: function (){
+    var stage = "";
+    if(this.state.takingATest=="start"){
+        stage = "takingATest";
+    }
+    this.setState({
+      takingATest: stage,
+    });
+  },
+
+   handleChange(event) {
+    console.log("CHANGED" + event);
+    this.setState({user_name: event.target.value});
+  },
+
+  render: function() {
+    console.log("rendering.....");
+    console.log("takingATest?");
+    console.log(this.state.takingATest);
+//    if(!this.state.takingATest){
+     if(this.state.takingATest=="start"){
+        return (
+            <div>
+             <label for="user_name">Enter your name here:</label>
+              <input type="text" name="user_name" />
+              <br></br>
+               <button onClick={() => this.handleClick()}>
+                    TAKE A TEST
+                </button>
+            </div>
+        );
+    }
+    else{
+        return (
+            <div>
+                <Test user_name={this.state.user_name} />
+            </div>
+        );
+    }
   }
 });
 
@@ -90,6 +333,5 @@ ReactDOM.render(
 );
 
 </script>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 </body>
 </html>
